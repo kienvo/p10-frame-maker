@@ -1,0 +1,1 @@
+Simple GUI app to generate 3-bit color resource for Full Color P10 RGB LED Display Modules
