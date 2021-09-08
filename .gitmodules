@@ -1,0 +1,3 @@
+[submodule "qsfml"]
+	path = qsfml
+	url = git://github.com/kienvo/qsfml.git
