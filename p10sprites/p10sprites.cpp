@@ -32,55 +32,84 @@ void DotLed::setColor(sf::Color color) {
 }
 uint8_t DotLed::get3bitColor() {
 	uint8_t color(0);
-	color |= (led[0].color.r==255)<<1;
-	color |= (led[0].color.g==255)<<2;
-	color |= (led[0].color.b==255)<<3;
+	color |= (led[0].color.r>200)<<0;
+	color |= (led[0].color.g>200)<<1;
+	color |= (led[0].color.b>200)<<2;
+	return color;
 }
-
-
-
-byteLed::byteLed(sf::Vector2f position, float bitsize, float space) {
-	m_pos = position;
-	for(int i=0; i<8; i++) {
-		leds[i] = new DotLed(m_pos+sf::Vector2f(0,i*bitsize+space*i), bitsize);
-	}
+void DotLed::set3bitColor(uint8_t color) {
+	setColor(sf::Color(
+		((color & p10frame::RED)==p10frame::RED)*255,
+		((color & p10frame::GREEN)==p10frame::GREEN)*255,
+		((color & p10frame::BLUE)==p10frame::BLUE)*255	
+	));
 }
-void byteLed::DrawTo(sf::RenderTarget& window) {
-	for(int i=0; i<8; i++) {
-		leds[i]->DrawTo(window);
-	}
-}
-DotLed* byteLed::getDotBy(int i) {
-	return leds[i];
-}
-
 
 p10::p10 (sf::Vector2f position, sf::Vector2i resolution, float bitsize, float space):
 m_pos(position), m_res(resolution), mbitsize(bitsize), mspace(space)
 {
-	msize = {(bitsize+space)*resolution.x,(bitsize+space)*resolution.y*8};
-	bytes.resize(resolution.y);
-	for(int i(0); i<resolution.y; i++) {
-		bytes[i].resize(resolution.x);
-		for(int j(0); j<resolution.x; j++){
-			bytes[i][j] = new byteLed(position+sf::Vector2f((bitsize+space)*j,(bitsize+space)*8*i),bitsize, space);
-		}
-	}
+	p10frame::FrameSegment seg = {(uint16_t)resolution.x, (uint16_t)resolution.y};
+	//std::vector<uint8_t> u(resolution.x*resolution.y, p10frame::BLUE);
+	importSegment(seg);
+}
+p10::~p10() {
+	cleanupPixels();
 }
 void p10::DrawTo(sf::RenderTarget& window) {
-	for(std::vector<byteLed*> i: bytes) {
-		for(byteLed* j: i) {
+	for(auto i: pixels) {
+		for(auto j: i) {
 			j->DrawTo(window);
 		}
 	}
 }
+void p10::cleanupPixels() {	
+	for(auto& i: pixels) {
+		i.resize(m_res.x);
+		for(auto& j: i){
+			delete j;
+		}
+		i.clear();
+	}
+	m_res = {0,0};
+}
+
 DotLed* p10::getDotBy(sf::Vector2f position)	 {
 	float x = position.x - m_pos.x;
 	float y = position.y - m_pos.y;
 	if(x < 0 || y < 0) return 0;
 	if(x >= msize.x || y >= msize.y) return 0;
 	float pixperled = mbitsize + mspace;
-	byteLed* b = bytes[(int)(y/(pixperled*8))] [(int)(x/pixperled)];
+	DotLed* b = pixels[(int)(y/(pixperled))] [(int)(x/pixperled)];
 
-	return b->getDotBy( (int)(y/pixperled)%8 );
+	return b;
+}
+
+void p10::importSegment(const p10frame::FrameSegment& seg, const uint8_t* data) {
+	cleanupPixels();
+	m_res.x = seg.frameSize.nCols;
+	m_res.y = seg.frameSize.nRows;
+	msize = {m_res.x*(mbitsize+mspace), m_res.y*(mbitsize+mspace)};
+	pixels.resize(m_res.x * m_res.y);
+	int k = 0;
+	for(int i(0); i<m_res.y; i++) {
+		pixels[i].resize(m_res.x);
+		for(int j(0); j<m_res.x; j++){
+			pixels[i][j] = new DotLed(m_pos+sf::Vector2f((mbitsize+mspace)*j,(mbitsize+mspace)*i),mbitsize);
+			if(data)pixels[i][j]->set3bitColor(data[k++]);
+		}
+	}
+}
+
+const p10frame::FrameSegment p10::exportSegment(std::vector<uint8_t>& data) const { // TODO: update this
+	p10frame::FrameSegment seg;
+	seg.frameSize.nCols = m_res.x;
+	seg.frameSize.nRows = m_res.y;
+	data.resize(seg.frameSize.nPixels());
+	int k(0);
+	for(int i(0); i<m_res.y; i++) {
+		for(int j(0); j<m_res.x; j++){
+			data[k++] = pixels[i][j]->get3bitColor();
+		}
+	}
+	return seg;
 }

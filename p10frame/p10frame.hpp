@@ -22,6 +22,7 @@
 
 class p10frame
 {
+public:
 enum BasicColor {
 	BLACK	=	0x00,
 	RED		= 	0x01,
@@ -33,8 +34,9 @@ enum BasicColor {
 	WHITE	= 	(BLUE | GREEN | RED)
 };
 struct DisplaySize {
-	uint16_t nRows; // Number of segment's rows led
 	uint16_t nCols; // Number of segment's  columns led
+	uint16_t nRows; // Number of segment's rows led
+	inline int nPixels() const {return nCols*nRows; };
 }__attribute__((packed));
 
 struct HeaderSection
@@ -46,8 +48,6 @@ struct HeaderSection
 }__attribute__((packed));
 
 struct FrameSegment {
-	//uint32_t absOffset;//  
-	uint32_t size;  // size of data
 	DisplaySize frameSize;
 }__attribute__((packed));
 
@@ -60,22 +60,40 @@ private:
 	HeaderSection header;
 	std::vector<FrameSegment> segments;
 	FooterSection footer;
-	std::vector<std::vector<uint8_t>> data;  // 3bit color pixel data //TODO: update to 8bit color
+	std::vector<std::vector<uint8_t>> mdata;  // 3bit color pixel data //TODO: update to 8bit color;
 	void updateCRC();
-
+	void readFile();
+	uint16_t crc_process();
 public:
-	void genTestFile();
-	void save();
-	void verify() {
-		
+	inline const HeaderSection& getFileHeader() const {
+		return header;
 	}
+	inline void setFileHeader(const HeaderSection& hd) {
+		segments.resize(hd.nSegments);
+		mdata.resize(hd.nSegments);
+		header = hd;
+	}
+	void setSegmentData(int index, const FrameSegment& seg, const std::vector<uint8_t>& data);
+	const FrameSegment* getSegmentNData(int index, std::vector<uint8_t>& data) const;
+	void genSampleFile();
+	void save();
+	/**
+	 * @brief 		Verify data with checksum
+	 * 
+	 * @return		true valid
+	 * @return		false invalid
+	 */
+	bool verify();
 	p10frame();
 	/**
 	 * @brief 		Open existing file
 	 * 
 	 * @param		path to existing file
 	 */
-	p10frame(const char *path);
+	p10frame(const char *path, std::ios_base::openmode mode);
+	inline bool isOpen() {
+		return _FrameFile->is_open();
+	}
 	//~p10frame();
 };
 

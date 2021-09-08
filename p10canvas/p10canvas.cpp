@@ -17,11 +17,11 @@ QSFML(parent, position)
 	float bitsize = 5.f;
 	float spacing = 1.f;
 	p = new p10({spacing,spacing},resolution,bitsize,spacing);
-	QWidget::resize((int)p->size().x+spacing, (int)p->size().y+spacing);
+	QWidget::setFixedSize((int)p->size().x+spacing, (int)p->size().y+spacing);
+	std::cerr << "canvas size " << p->size().x << ' ' << p->size().y << std::endl;
+	qDebug() << "canvas size " << size();
+	std::cerr << "resolution " << resolution.x << " " << resolution.y << std::endl;
 	
-	sf::View view = RenderTarget::getDefaultView();
-	view.setSize(p->size().x, p->size().y);
-	RenderTarget::setView(view);
 }
 
 void p10canvas:: pickColor(sf::Color color){

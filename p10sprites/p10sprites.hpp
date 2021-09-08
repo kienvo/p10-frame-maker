@@ -24,33 +24,46 @@ public:
 	void DrawTo(sf::RenderTarget& window);
 	void setColor(sf::Color color);
 	uint8_t get3bitColor();
+	void set3bitColor(uint8_t color);
 };
 
-class byteLed {
-private:
-	DotLed* leds[8];
-	sf::Vector2f m_pos;
-public:
-	byteLed(sf::Vector2f position, float bitsize, float space);
-	void DrawTo(sf::RenderTarget& window);
-	DotLed* getDotBy(int i);
-	uint8_t getByteVal();
-};
 
-class p10 {
+class p10
+{
 private:
 	sf::Vector2f m_pos;
-	std::vector<std::vector<byteLed*>> bytes;
+	std::vector<std::vector<DotLed*>> pixels;
 	sf::Vector2f m_res;
 	sf::Vector2f msize;
 	float mbitsize;
 	float mspace;
+	void cleanupPixels();
 public:
 	p10 (sf::Vector2f position, sf::Vector2i resolution, float bitsize, float space);
+	/**
+	 * @brief 		return the size of window in pixel
+	 * 
+	 * @return		sf::Vector2f 
+	 */
 	inline sf::Vector2f size() {
 		return msize;
 	}
+	~p10();
 	void DrawTo(sf::RenderTarget& window);
+	/**
+	 * @brief 		Get dot by pixel position
+	 * 
+	 * @param		position mouse relative position with m_pos
+	 * @return		DotLed* 
+	 */
 	DotLed* getDotBy(sf::Vector2f position);
+	void importSegment(const p10frame::FrameSegment& seg, const uint8_t *data=nullptr);
+	/**
+	 * @brief 		export frame data
+	 * 
+	 * @param		data pointer allocated memory, remember to allocate an array before call this function to get data
+	 * @return		const p10frame::FrameSegment frame description
+	 */
+	const p10frame::FrameSegment exportSegment(std::vector<uint8_t>& data) const;
 };
 #endif //__P10SPRITES_HPP__
