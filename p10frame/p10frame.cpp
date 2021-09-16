@@ -35,8 +35,13 @@ p10frame::p10frame() {
 }
 p10frame::p10frame(const char *path, std::ios_base::openmode mode) {
 	_FrameFile = new std::fstream(path, mode);
-	if(mode & std::fstream::in) readFile();
-	assert(_FrameFile->is_open()); // TODO: assert test
+	if(!_FrameFile->is_open()) {
+		_error = "Cannot open file";
+		return;
+	}
+	if(mode & std::fstream::in) {
+		if(!readFile()) _error = "File is corrupted";
+	}
 }
 void p10frame::genSampleFile() {
 	memcpy(header.magic,"FRAMES",6);
@@ -83,7 +88,7 @@ uint16_t p10frame::crc_process() {
 }
 
 bool p10frame::verify() {
-	return crc_process() == footer.crc16;
+	return (crc_process() == footer.crc16) && (strncmp(header.magic, "FRAME",6));
 }
 
 void p10frame::updateCRC() {
@@ -97,7 +102,7 @@ void p10frame::updateCRC() {
 	footer.crc16 = crc16.checksum();
 	std::cerr << "checksum test " << crc16.checksum() << std::endl;
 }
-void p10frame::readFile() { // TODO: void to bool
+bool p10frame::readFile() {
 	_FrameFile->seekg(0);
 	_FrameFile->read((char*)&header,sizeof(HeaderSection));
 	segments.resize(header.nSegments);
@@ -108,5 +113,5 @@ void p10frame::readFile() { // TODO: void to bool
 		_FrameFile->read((char*)&mdata[i][0],mdata[i].size()); // XXX: old school memcpy
 	}
 	_FrameFile->read((char*)&footer, sizeof(FooterSection));
-	assert(verify()); // FIXME: assert clean
+	return verify();
 }

@@ -13,7 +13,7 @@
 #include <SFML/Graphics.hpp>
 #include <p10frame/p10frame.hpp>
 
-//TODO: add color
+
 class DotLed {
 private:
 	sf::Vector2f m_pos;

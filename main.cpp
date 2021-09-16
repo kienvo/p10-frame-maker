@@ -109,17 +109,32 @@ private:
 	QDockWidget* framelist;
 	bool isEditing;
 
-	void applySegmentToBoards(const p10frame* frame) {
+	void errorMessage() {
+		
+	}
+
+	bool applySegmentToBoards(const p10frame* frame) {
 		boards.resize(frame->getFileHeader().nSegments);
 		for(int i(0); i<frame->getFileHeader().nSegments; i++) {
 			std::vector<uint8_t> data;
 			data.resize(frame->getFileHeader().displaySize.nPixels());
+
 			const p10frame::FrameSegment* seg = frame->getSegmentNData(i, data);
-			assert(seg); // FIXME: assert test
+			if(!seg) { // Check null
+				statusBar()->showMessage(tr("Abort apply segments to boards."));
+				QMessageBox::critical(this, tr("Error"),
+					tr("Frame arguments is wrong.\n Abort apply segments to boards."),
+					QMessageBox::Cancel
+				);
+				statusBar()->showMessage(tr("Abort apply segments to boards."),5000);
+				return false;
+			}
+
 			boards[i] = new p10canvas(nullptr,  QPoint(2,2), {seg->frameSize.nCols, seg->frameSize.nRows});
 			assert(boards[i]); // FIXME: assert test
 			boards[i]->importSegment(*seg, data.data());
 		}
+		return true;
 	}
 
 	void updateSegment(QListWidgetItem* item) {
@@ -154,6 +169,7 @@ private:
 	}
 	
 	void loadFromFile() {  // TODO: maintain this
+		statusBar()->showMessage("Loading file ...");
 		if(isEditing) {
 			auto list = framelist->widget()->findChild<QListWidget*>();
 			auto btn = framelist->widget()->findChild<QPushButton*>();
@@ -171,14 +187,18 @@ private:
 			statusBar()->showMessage("Unable to open file");
 			return;
 		}
-		statusBar()->showMessage("Loading file ...");
 
 		auto frame = new p10frame(filename.toLocal8Bit().data(), 
 			std::fstream::binary
 			| std::fstream::in
 		);
-		if(!frame->isOpen()) {
-			statusBar()->showMessage("Unable to open file");
+		if(!frame->isValid()) {			
+			statusBar()->showMessage(QString::fromStdString(frame->getErrorString()));
+			QMessageBox::critical(this, tr("Error"),
+				QString::fromStdString(frame->getErrorString()),
+				QMessageBox::Cancel
+			);
+			statusBar()->clearMessage();
 			return;
 		}
 
@@ -192,13 +212,18 @@ private:
 				}
 			);
 		}
-		applySegmentToBoards(frame);
+		if(!applySegmentToBoards(frame)) {
+			list->clear();
+			return;
+		}
 		updateSegment(0);
 		statusBar()->showMessage("");
 		isEditing = true;
+		statusBar()->clearMessage();		
 	}
 
 	void saveFileAs() {  // TODO: maintain this
+		statusBar()->showMessage("Saving file ...");
 		QString filename = QFileDialog::getSaveFileName(this,
 			tr("Save Frame file"), "",
 			tr("Frame file (*.frame);;All Files (*)")
@@ -207,14 +232,18 @@ private:
 			statusBar()->showMessage("Unable to open file");
 			return;
 		}
-		statusBar()->showMessage("Loading file ...");
 
 		auto* fr = new p10frame(filename.toLocal8Bit().data(), 
 			std::fstream::binary
 			| std::fstream::out
 		);
-		if(!fr->isOpen()) {
-			statusBar()->showMessage("Unable to open file");
+		if(!fr->isValid()) {
+			statusBar()->showMessage(QString::fromStdString(fr->getErrorString()));
+			QMessageBox::critical(this, tr("Error"),
+				QString::fromStdString(fr->getErrorString()),
+				QMessageBox::Cancel
+			);
+			statusBar()->clearMessage();
 			return;
 		}
 		p10frame::HeaderSection hd;
@@ -243,7 +272,7 @@ private:
 	}
 
 	void createStatusbar() {
-		statusBar()->showMessage(tr("Ready"));
+		statusBar()->showMessage(tr("Ready"), 5000);
 		statusBar()->setStyleSheet("border-top: 1px outset grey;");
 	}
 	
@@ -484,12 +513,12 @@ void genSampleFile() {
 	std::cerr << "this is stderr" << endl;
 	std::cout << "this is stdout" << endl;
 }
-void importSampleFile() {
+bool importSampleFile() {
 	qDebug() << "import sample file";
-	p10frame* frame = new p10frame("export.frame", 		
+	p10frame* frame = new p10frame("export.frame",	
 		std::fstream::binary
 		| std::fstream::in
-	);	
+	);
 }
 
 int main(int argc, char **argv) {

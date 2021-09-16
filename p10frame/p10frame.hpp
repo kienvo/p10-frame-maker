@@ -19,6 +19,7 @@
 #include <vector>
 #include <iterator>
 #include <cstring>
+#include <string>
 
 class p10frame
 {
@@ -61,8 +62,9 @@ private:
 	std::vector<FrameSegment> segments;
 	FooterSection footer;
 	std::vector<std::vector<uint8_t>> mdata;  // 3bit color pixel data //TODO: update to 8bit color;
+	std::string _error; // Error string, empty mean no error
 	void updateCRC();
-	void readFile();
+	bool readFile();
 	uint16_t crc_process();
 public:
 	inline const HeaderSection& getFileHeader() const {
@@ -93,6 +95,13 @@ public:
 	p10frame(const char *path, std::ios_base::openmode mode);
 	inline bool isOpen() {
 		return _FrameFile->is_open();
+	}
+	inline bool isValid() {
+		int len = _error.length();
+		return (_error.length() == 0);
+	}
+	inline std::string& getErrorString() {
+		return _error;
 	}
 	//~p10frame();
 };

@@ -41,10 +41,10 @@ void p10canvas:: OnUpdate() {
 void p10canvas::DrawColor(QMouseEvent* event) {
 	DotLed *t = p->getDotBy(mapPixelToCoords({event->x(),event->y()})); // TODO: Zoomming is not used
 	if(event->modifiers() & Qt::AltModifier) {
-		if(t) t->setColor(sf::Color::Black); // TODO: remove led
+		if(t) t->setColor(sf::Color::Black);
 		return;
 	}
-	if(t) t->setColor(colorState); // TODO: set color led
+	if(t) t->setColor(colorState); 
 }
 void p10canvas::mousePressEvent(QMouseEvent* event) {
 	if(event->button() == Qt::LeftButton){
