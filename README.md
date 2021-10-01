@@ -1,8 +1,8 @@
 <div align="center">
 	<h1>P10 Frame Maker</h1>
+	<p>Simple GUI app to generate 3-bit color resource for Full Color P10 RGB LED Display Modules.</p>
 </div>
 
-Simple GUI app to generate 3-bit color resource for Full Color P10 RGB LED Display Modules.
 
 <p align="center">
     <img alt="P10 Frame Maker Demo" src="images/demo-img.jpg"></img>
