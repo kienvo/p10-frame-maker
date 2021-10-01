@@ -109,9 +109,6 @@ private:
 	QDockWidget* framelist;
 	bool isEditing;
 
-	void errorMessage() {
-		
-	}
 
 	bool applySegmentToBoards(const p10frame* frame) {
 		boards.resize(frame->getFileHeader().nSegments);
@@ -131,7 +128,7 @@ private:
 			}
 
 			boards[i] = new p10canvas(nullptr,  QPoint(2,2), {seg->frameSize.nCols, seg->frameSize.nRows});
-			assert(boards[i]); // FIXME: assert test
+			
 			boards[i]->importSegment(*seg, data.data());
 		}
 		return true;
@@ -369,6 +366,9 @@ private:
 			ret.nCols = p10cols[col.currentIndex()].second;
 			d.accept();
 		});
+		QObject::connect(&d, &QDialog::rejected, [&](){
+			ret = {};
+		});
 		d.setWindowTitle("Please set resolution");
 		d.setFixedSize(d.sizeHint());
 		d.exec();
@@ -416,54 +416,10 @@ private:
 		/* Actions */
 		connect(btn, &QPushButton::clicked, [&](){
 			p10frame::DisplaySize dpsz = popupSelectSizeDialog();
-			addNewSegment(dpsz);
+			if(dpsz.nPixels()) addNewSegment(dpsz);
 		});
 	}
 
-	void createDock1() {
-		auto* dock = new QDockWidget(tr("Dock Widget"), this);
-		auto* multiWidget = new QWidget;
-		auto* layout = new QVBoxLayout;		
-		auto* tree = new QTreeWidget;
-		auto* btn = new QPushButton("Add new frame");
-		
-
-		tree->setColumnCount(1);
-		//tree->header()->setStretchLastSection(false);
-		//tree->header()->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum);
-		//tree->header()->setSectionResizeMode(QHeaderView::ResizeMode::ResizeToContents);
-		
-		QList<QTreeWidgetItem *> items;
-		items.append(new QTreeWidgetItem(static_cast<QTreeWidget *>(nullptr), QStringList(QString("header"))));
-		items.append(new QTreeWidgetItem(static_cast<QTreeWidget *>(nullptr), QStringList(QString("segments"))));
-		tree->insertTopLevelItems(0, items);
-
-		items[0]->addChild(new QTreeWidgetItem(QStringList(QString("test"))));
-		items[1]->addChild(new QTreeWidgetItem(QStringList(QString("Frame[0]"))));
-		items[1]->addChild(new QTreeWidgetItem(QStringList(QString("Frame[1]"))));
-		items[1]->addChild(new QTreeWidgetItem(QStringList(QString("Frame[2]"))));
-		items[1]->addChild(new QTreeWidgetItem(QStringList(QString("Frame[3]"))));
-		//items[0]->setSizeHint(0, {30,30});
-		//tree->showMinimized();
-		tree->resizeColumnToContents(0);
-		tree->header()->setMinimumWidth(50);
-		tree->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Minimum);
-
-		layout->addWidget(tree);
-		tree->show();
-		tree->resize(100,100);
-		layout->addWidget(btn);
-		multiWidget->setLayout(layout);
-		
-		//dock->setStyleSheet("border: 1px outset grey");
-		dock->setAllowedAreas(Qt::LeftDockWidgetArea |Qt::RightDockWidgetArea);
-		dock->setWidget(multiWidget);
-
-		
-		
-		addDockWidget(Qt::RightDockWidgetArea, dock);
-	}
-	
 	void createCentralWidget() {
 		// displayBoard = new p10canvas(nullptr, QPoint(2,2), setting.resolution);
 		// QSize sz = displayBoard->size();
