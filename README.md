@@ -15,7 +15,7 @@
 Install toolchain, make sure `build-essential`, `qt5-default`, `libsfml-dev` were installed. Or install them by:
 
 ```console
-# apt-get install build-essential qt5-default libsfml-dev
+# apt-get install build-essential qt5-default libsfml-dev git
 ```
 
 Clone the source code:
